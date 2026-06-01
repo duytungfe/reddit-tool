@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reddit Content Finder</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;700&display=swap');
+
+  :root {
+    --bg: #0e0e10;
+    --surface: #18181b;
+    --surface2: #27272a;
+    --border: #3f3f46;
+    --accent: #ff4500;
+    --accent2: #ff6b35;
+    --text: #fafafa;
+    --muted: #a1a1aa;
+    --green: #22c55e;
+    --radius: 12px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    padding: 24px 16px;
+  }
+
+  .header {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  .logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+
+  .logo-icon {
+    width: 40px;
+    height: 40px;
+    background: var(--accent);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+  }
+
+  .logo h1 {
+    font-family: 'Space Mono', monospace;
+    font-size: 22px;
+    letter-spacing: -0.5px;
+    color: var(--text);
+  }
+
+  .logo h1 span { color: var(--accent); }
+
+  .subtitle {
+    color: var(--muted);
+    font-size: 14px;
+    font-weight: 300;
+  }
+
+  .search-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 24px;
+    max-width: 680px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .input-wrap {
+    flex: 1;
+    min-width: 180px;
+    position: relative;
+  }
+
+  .input-wrap input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 11px 14px 11px 38px;
+    font-size: 15px;
+    font-family: 'DM Sans', sans-serif;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .input-wrap input:focus { border-color: var(--accent); }
+  .input-wrap input::placeholder { color: var(--muted); }
+
+  .input-icon {
+    position: absolute;
+    left: 11px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    font-size: 16px;
+    pointer-events: none;
+  }
+
+  .badges {
+    display: flex;
+    gap: 6px;
+  }
+
+  .badge {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-family: 'Space Mono', monospace;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .badge .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .badge.active { border-color: var(--accent); color: var(--accent); }
+
+  .btn {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 11px 20px;
+    font-size: 14px;
+    font-weight: 700;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    white-space: nowrap;
+    transition: background 0.15s, transform 0.1s;
+  }
+
+  .btn:hover { background: var(--accent2); }
+  .btn:active { transform: scale(0.97); }
+  .btn:disabled { background: var(--border); cursor: not-allowed; transform: none; }
+
+  .filter-hint {
+    margin-top: 12px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    font-size: 12px;
+    color: var(--muted);
+    flex-wrap: wrap;
+  }
+
+  .tag {
+    background: rgba(255,69,0,0.15);
+    color: var(--accent);
+    border-radius: 4px;
+    padding: 2px 7px;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+  }
+
+  .results-header {
+    max-width: 680px;
+    margin: 0 auto 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .results-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .count-badge {
+    background: var(--accent);
+    color: #fff;
+    border-radius: 20px;
+    padding: 3px 10px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .cards {
+    max-width: 680px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    animation: fadeIn 0.3s ease both;
+    transition: border-color 0.2s;
+  }
+
+  .card:hover { border-color: var(--accent); }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .card-body { padding: 16px; }
+
+  .card-num {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    margin-bottom: 8px;
+    letter-spacing: 1px;
+  }
+
+  .card-content {
+    font-size: 15px;
+    font-weight: 500;
+    line-height: 1.5;
+    margin-bottom: 10px;
+    color: var(--text);
+  }
+
+  .card-via {
+    font-size: 13px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+
+  .card-via strong { color: #a78bfa; }
+
+  .card-meta {
+    display: flex;
+    gap: 12px;
+    font-size: 12px;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .card-img {
+    width: 100%;
+    max-height: 440px;
+    object-fit: cover;
+    display: block;
+    border-top: 1px solid var(--border);
+  }
+
+  .no-img {
+    padding: 14px 16px;
+    border-top: 1px solid var(--border);
+    background: var(--surface2);
+    font-size: 12px;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    text-align: center;
+  }
+
+  .loading {
+    max-width: 680px;
+    margin: 0 auto;
+    text-align: center;
+    padding: 48px 0;
+    display: none;
+  }
+
+  .spinner {
+    width: 36px;
+    height: 36px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    margin: 0 auto 16px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading p { color: var(--muted); font-size: 14px; }
+  .loading .sub { font-size: 12px; font-family: 'Space Mono', monospace; color: var(--border); margin-top: 6px; }
+
+  .error-box {
+    max-width: 680px;
+    margin: 0 auto;
+    background: rgba(239,68,68,0.1);
+    border: 1px solid rgba(239,68,68,0.3);
+    border-radius: var(--radius);
+    padding: 16px;
+    font-size: 14px;
+    color: #fca5a5;
+    display: none;
+    line-height: 1.7;
+  }
+
+  .empty {
+    max-width: 680px;
+    margin: 0 auto;
+    text-align: center;
+    padding: 60px 20px;
+    display: none;
+  }
+
+  .empty-icon { font-size: 48px; margin-bottom: 16px; }
+  .empty h3 { font-size: 16px; margin-bottom: 8px; }
+  .empty p { color: var(--muted); font-size: 14px; }
+
+  .link-btn {
+    display: inline-block;
+    margin-top: 10px;
+    font-size: 12px;
+    color: var(--accent);
+    text-decoration: none;
+    font-family: 'Space Mono', monospace;
+  }
+  .link-btn:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">
+    <div class="logo-icon">🔥</div>
+    <h1>Reddit <span>Content</span> Finder</h1>
+  </div>
+  <p class="subtitle">Tìm 10 bài Top · Today theo từ khóa — dữ liệu thời gian thực</p>
+</div>
+
+<div class="search-box">
+  <div class="row">
+    <div class="input-wrap">
+      <span class="input-icon">🔍</span>
+      <input type="text" id="keyword" placeholder="Nhập từ khóa... (vd: lego, gaming, travel)" value="lego" />
+    </div>
+    <div class="badges">
+      <div class="badge active"><span class="dot"></span> Top</div>
+      <div class="badge active"><span class="dot"></span> Today</div>
+    </div>
+    <button class="btn" id="searchBtn" onclick="fetchPosts()">
+      <span>⚡</span> Tìm ngay
+    </button>
+  </div>
+  <div class="filter-hint">
+    <span>Bộ lọc:</span>
+    <span class="tag">sort=top</span>
+    <span class="tag">t=day</span>
+    <span class="tag">limit=10</span>
+    <span style="margin-left:4px">· Nhấn <kbd style="background:var(--surface2);border:1px solid var(--border);border-radius:3px;padding:1px 5px;font-size:11px">Enter</kbd> để tìm</span>
+  </div>
+</div>
+
+<div class="loading" id="loading">
+  <div class="spinner"></div>
+  <p>Đang tải dữ liệu từ Reddit...</p>
+  <p class="sub">GET reddit.com/search.json · sort=top · t=day</p>
+</div>
+
+<div class="error-box" id="errorBox"></div>
+
+<div class="results-header" id="resultsHeader" style="display:none">
+  <span class="results-label" id="resultsLabel"></span>
+  <span class="count-badge" id="countBadge"></span>
+</div>
+
+<div class="cards" id="cards"></div>
+<div class="empty" id="empty">
+  <div class="empty-icon">📭</div>
+  <h3>Không tìm thấy bài nào</h3>
+  <p>Thử từ khóa khác hoặc kiểm tra kết nối mạng</p>
+</div>
+
+<script>
+  document.getElementById('keyword').addEventListener('keydown', e => {
+    if (e.key === 'Enter') fetchPosts();
+  });
+
+  function getImageUrl(post) {
+    if (post.preview && post.preview.images && post.preview.images[0]) {
+      const src = post.preview.images[0].source.url;
+      return src.replace(/&amp;/g, '&');
+    }
+    const url = post.url || '';
+    if (/\.(jpg|jpeg|png|gif|webp)(\?|$)/i.test(url)) return url;
+    const thumb = post.thumbnail || '';
+    if (thumb && !['self','default','nsfw','spoiler','image',''].includes(thumb)) return thumb;
+    return null;
+  }
+
+  async function fetchPosts() {
+    const keyword = document.getElementById('keyword').value.trim();
+    if (!keyword) { document.getElementById('keyword').focus(); return; }
+
+    const btn = document.getElementById('searchBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span>⏳</span> Đang tải...';
+
+    document.getElementById('cards').innerHTML = '';
+    document.getElementById('resultsHeader').style.display = 'none';
+    document.getElementById('errorBox').style.display = 'none';
+    document.getElementById('empty').style.display = 'none';
+    document.getElementById('loading').style.display = 'block';
+
+    const redditUrl = `https://www.reddit.com/search.json?q=${encodeURIComponent(keyword)}&sort=top&t=day&limit=10&raw_json=1`;
+    const proxies = [
+      `https://corsproxy.io/?url=${encodeURIComponent(redditUrl)}`,
+      `https://api.allorigins.win/raw?url=${encodeURIComponent(redditUrl)}`,
+      redditUrl
+    ];
+
+    let res, lastErr;
+    for (const url of proxies) {
+      try {
+        res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+        if (res.ok) break;
+      } catch(e) { lastErr = e; res = null; }
+    }
+    if (!res || !res.ok) throw lastErr || new Error('Tất cả proxy đều thất bại');
+
+    try {
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const posts = (data.data && data.data.children) ? data.data.children : [];
+
+      document.getElementById('loading').style.display = 'none';
+
+      if (posts.length === 0) {
+        document.getElementById('empty').style.display = 'block';
+      } else {
+        renderPosts(posts, keyword);
+      }
+    } catch (err) {
+      document.getElementById('loading').style.display = 'none';
+      const box = document.getElementById('errorBox');
+      box.innerHTML = `
+        <strong>⚠️ Không kết nối được Reddit</strong><br>
+        <span style="font-size:12px;opacity:0.8">${err.message}</span><br>
+        <span style="font-size:12px;opacity:0.7">Reddit chặn CORS từ file HTML local. Để dùng được: mở Chrome với flag <code style="background:rgba(255,255,255,0.1);padding:1px 4px;border-radius:3px">--disable-web-security</code>, hoặc upload file lên server, hoặc dùng extension CORS Unblock.</span>
+        <br><a class="link-btn" href="https://www.reddit.com/search/?q=${encodeURIComponent(keyword)}&sort=top&t=day" target="_blank">→ Xem trực tiếp trên Reddit.com</a>
+      `;
+      box.style.display = 'block';
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<span>⚡</span> Tìm ngay';
+    }
+  }
+
+  function renderPosts(posts, keyword) {
+    document.getElementById('resultsHeader').style.display = 'flex';
+    document.getElementById('resultsLabel').textContent = `Kết quả cho "${keyword}" · Top Today`;
+    document.getElementById('countBadge').textContent = posts.length + ' bài';
+
+    const container = document.getElementById('cards');
+
+    posts.forEach((item, i) => {
+      const p = item.data;
+      const imgUrl = getImageUrl(p);
+      const ups = p.ups ? formatNum(p.ups) : '—';
+      const comments = p.num_comments ? formatNum(p.num_comments) : '0';
+      const sub = p.subreddit_name_prefixed || ('r/' + p.subreddit);
+
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.style.animationDelay = (i * 0.05) + 's';
+
+      card.innerHTML =
+        '<div class="card-body">' +
+          '<div class="card-num">POST #' + String(i+1).padStart(2,'0') + '</div>' +
+          '<div class="card-content">' + esc(p.title) + '</div>' +
+          '<div class="card-via">via <strong>u/' + esc(p.author) + '</strong></div>' +
+          '<div class="card-meta">' +
+            '<span>⬆️ ' + ups + '</span>' +
+            '<span>💬 ' + comments + '</span>' +
+            '<span>📌 ' + esc(sub) + '</span>' +
+            '<a href="https://reddit.com' + esc(p.permalink) + '" target="_blank" style="color:var(--accent);text-decoration:none;font-size:11px">↗ Xem bài</a>' +
+          '</div>' +
+        '</div>' +
+        (imgUrl
+          ? '<img class="card-img" src="' + esc(imgUrl) + '" alt="Post image" loading="lazy" onerror="this.style.display=\'none\'" />'
+          : '<div class="no-img">[ Bài text — không có hình ảnh ]</div>');
+
+      container.appendChild(card);
+    });
+  }
+
+  function formatNum(n) {
+    return n >= 1000 ? (n/1000).toFixed(1) + 'k' : String(n);
+  }
+
+  function esc(str) {
+    return String(str || '')
+      .replace(/&/g,'&amp;')
+      .replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;');
+  }
+
+  window.addEventListener('load', fetchPosts);
+</script>
+</body>
+</html>
